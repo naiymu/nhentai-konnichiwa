@@ -16,6 +16,8 @@ konnichiwa, you could use this userscript.
 If you don't use konnichiwa, you can still use this without losing any
 functionality.
 
+**Mirror sites can still break because of CloudFlare**
+
 ## Install
 [Install](https://raw.githubusercontent.com/naiymu/k-nhentai/master/k-nhentai.user.js)
 
