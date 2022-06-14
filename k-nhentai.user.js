@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         K-NHentai
 // @author       naiymu
-// @version      0.1
+// @version      1.0.1
 // @license      MIT; https://raw.githubusercontent.com/naiymu/k-nhentai/main/LICENSE
 // @namespace    https://github.com/naiymu/k-nhentai
 // @homepage     https://github.com/naiymu/k-nhentai
 // @downloadURL  https://github.com/naiymu/k-nhentai/raw/main/k-nhentai.user.js
 // @updateURL    https://github.com/naiymu/k-nhentai/raw/main/k-nhentai.user.js
 // @supportURL   https://github.com/naiymu/k-nhentai/issues
-// @description  Downloads doujinshi from NHentai
+// @description   A simple usercript for downloading doujinshi from NHentai and mirrors 
 // @match        https://nhentai.net/*
 // @match        https://nhentai.xxx/*
 // @match        https://nyahentai.red/*
