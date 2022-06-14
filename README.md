@@ -18,6 +18,11 @@ konnichiwa, you could use this userscript.
 If you don't use konnichiwa, you can still use this without losing any
 functionality.
 
+Supports only
+[Tampermonkey](https://www.tampermonkey.net/)
+and
+[Violentmonkey](https://violentmonkey.github.io/).
+
 **Mirror sites can still break because of CloudFlare**
 
 ## Install
