@@ -1,5 +1,7 @@
 <p align="center">
   <img src="assets/logo.png">
+  <br>
+  <a href="https://www.codefactor.io/repository/github/naiymu/k-nhentai/overview/main"><img src="https://www.codefactor.io/repository/github/naiymu/k-nhentai/badge/main" alt="CodeFactor" /></a>
 </p>
 <h1 align="center">K-NHentai</h1>
 <p align="center">
