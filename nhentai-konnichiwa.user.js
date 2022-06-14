@@ -1,14 +1,14 @@
 // ==UserScript==
-// @name         K-NHentai
+// @name         NHentai Konnichiwa
 // @author       naiymu
 // @version      1.0.1
-// @license      MIT; https://raw.githubusercontent.com/naiymu/k-nhentai/main/LICENSE
-// @namespace    https://github.com/naiymu/k-nhentai
-// @homepage     https://github.com/naiymu/k-nhentai
-// @downloadURL  https://github.com/naiymu/k-nhentai/raw/main/k-nhentai.user.js
-// @updateURL    https://github.com/naiymu/k-nhentai/raw/main/k-nhentai.user.js
-// @supportURL   https://github.com/naiymu/k-nhentai/issues
-// @description   A simple usercript for downloading doujinshi from NHentai and mirrors 
+// @license      MIT; https://raw.githubusercontent.com/naiymu/nhentai-konnichiwa/main/LICENSE
+// @namespace    https://github.com/naiymu/nhentai-konnichiwa
+// @homepage     https://github.com/naiymu/nhentai-konnichiwa
+// @downloadURL  https://github.com/naiymu/nhentai-konnichiwa/raw/main/nhentai-konnichiwa.user.js
+// @updateURL    https://github.com/naiymu/nhentai-konnichiwa/raw/main/nhentai-konnichiwa.user.js
+// @supportURL   https://github.com/naiymu/nhentai-konnichiwa/issues
+// @description  A simple usercript for downloading doujinshi from NHentai and mirrors 
 // @match        https://nhentai.net/*
 // @match        https://nhentai.xxx/*
 // @match        https://nyahentai.red/*
@@ -26,7 +26,7 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @run-at       document-end
-// @icon         https://raw.githubusercontent.com/naiymu/k-nhentai/main/assets/icon.png
+// @icon         https://raw.githubusercontent.com/naiymu/nhentai-konnichiwa/main/assets/icon.png
 // ==/UserScript==
 
 GM_addStyle (
@@ -393,7 +393,7 @@ function saveConfig(reset=false) {
 function addConfigMenu() {
 
     var heading = createNode('h3', ['heading']);
-    heading.innerHTML = "K-Nhentai";
+    heading.innerHTML = "nhentai-konnichiwa";
     configDiv.appendChild(heading);
 
     for(const [key, value] of Object.entries(CONFIG)) {

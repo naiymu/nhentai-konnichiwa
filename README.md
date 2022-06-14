@@ -1,9 +1,9 @@
 <p align="center">
   <img src="assets/logo.png">
   <br>
-  <a href="https://www.codefactor.io/repository/github/naiymu/k-nhentai/overview/main"><img src="https://www.codefactor.io/repository/github/naiymu/k-nhentai/badge/main" alt="CodeFactor" /></a>
+  <a href="https://www.codefactor.io/repository/github/naiymu/nhentai-konnichiwa/overview/main"><img src="https://www.codefactor.io/repository/github/naiymu/nhentai-konnichiwa/badge/main" alt="CodeFactor" /></a>
 </p>
-<h1 align="center">K-NHentai</h1>
+<h1 align="center">NHentai Konnichiwa</h1>
 <p align="center">
   A simple usercript for downloading galleries from NHentai and mirrors
 </p>
@@ -26,7 +26,7 @@ and
 **Mirror sites can still break because of CloudFlare**
 
 ## Install
-[Install](https://raw.githubusercontent.com/naiymu/k-nhentai/master/k-nhentai.user.js)
+[Install](https://raw.githubusercontent.com/naiymu/nhentai-konnichiwa/master/nhentai-konnichiwa.user.js)
 
 ## Features
 ### Checkboxes at the top left corner of every gallery on any page
