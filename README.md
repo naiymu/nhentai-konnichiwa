@@ -29,7 +29,6 @@ and
 - [Install](https://raw.githubusercontent.com/naiymu/nhentai-konnichiwa/master/nhentai-konnichiwa.user.js) from *github.com*
 - [Install](https://greasyfork.org/scripts/446488-nhentai-konnichiwa/code/NHentai%20Konnichiwa.user.js) from *greasyfork.org*
 - [Install](https://sleazyfork.org/scripts/446488-nhentai-konnichiwa/code/NHentai%20Konnichiwa.user.js) from *sleazyfork.org*
-- [Install](https://openuserjs.org/install/naiymu/NHentai_Konnichiwa.user.js) from *openuserjs.org*
 
 ## Features
 ### Checkboxes at the top left corner of every gallery on any page
