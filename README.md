@@ -50,6 +50,9 @@ On the recommendations section.
 </p>
 
 ### Buttons at the bottom-left corner of the page
+<p align="center">
+  <img src="assets/buttons.png">
+</p>
 
 - **Download button**: Download all selected galleries. The Download button changes state depending on the stage of download.
     If the data is being `fetched`, it looks like this:
@@ -66,9 +69,6 @@ On the recommendations section.
 - **Check-all checkbox**: Select all galleries on the page. Since there are
 checkboxes on the recommendation ("More like this"), if you check this on a
 gallery page, it's recommendations will get selected as well.
-    <p align="center">
-      <img src="assets/buttons.png">
-    </p>
 
 ### Configuration options
 
