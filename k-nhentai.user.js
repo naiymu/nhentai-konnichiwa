@@ -637,6 +637,12 @@ async function addInfo(code) {
     if(constTitleExists) {
         title += " - "+code;
     }
+    fileNamePrep = fileNamePrep.trim();
+    var namePrep = "";
+    if(fileNamePrep != "") {
+        namePrep = fileNamePrep + fileNameSep;
+    }
+    var coverExtension = getExtension(obj.images.pages[0].t);
     await info.push({
         code: code,
         title: title,
@@ -644,6 +650,8 @@ async function addInfo(code) {
         tags: tags,
         pages: pages,
         mediaUrl: mediaUrl,
+        namePrep: namePrep,
+        coverExtension: coverExtension,
         pagesInfo: obj.images.pages,
     });
 }
@@ -652,6 +660,7 @@ async function addToQueue(item, mediaId=null) {
     var pages = item.pages;
     var title = item.title;
     var mediaUrl = item.mediaUrl;
+    var namePrep = item.namePrep;
     for(let i=0; i<pages; i++) {
         var extension = getExtension(item.pagesInfo[i].t);
         let page = i + 1;
@@ -661,11 +670,6 @@ async function addToQueue(item, mediaId=null) {
         }
         else {
             imgUrl = `${mediaUrl}${page}${extension}`;
-        }
-        fileNamePrep = fileNamePrep.trim();
-        var namePrep = "";
-        if(fileNamePrep != "") {
-            namePrep = fileNamePrep + fileNameSep;
         }
         await queue.push({
             page: page,
@@ -762,8 +766,8 @@ function saveJSON() {
     var data = [];
     for(var item of info) {
         data.push({
-            title: item.title,
-            cover: `${item.namePrep}1${item.extension}`,
+            dirName: item.title,
+            dirCover: `${item.namePrep}1${item.coverExtension}`,
             authors: item.artists,
             tags: item.tags,
         });
