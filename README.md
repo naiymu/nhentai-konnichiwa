@@ -26,113 +26,120 @@ functionality.
 
 On the individual gallery page.
 
-![Checkbox on gallery](assets/gallery.png)
+<p align="center">
+  <img src="assets/gallery.png">
+</p>
 
 On the homepage, search and similar pages.
 
-![Checkboxes on homepage](assets/home.png)
+<p align="center">
+  <img src="assets/home.png">
+</p>
 
 On the recommendations section.
 
-![Checkboxes on recommendations](assets/recommendations.png)
+<p align="center">
+  <img src="assets/recommendations.png">
+</p>
 
 ### Buttons at the bottom-left corner of the page
 
-**Download button**: Download all selected galleries.
+- **Download button**: Download all selected galleries. The Download button changes state depending on the stage of download.
+    If the data is being `fetched`, it looks like this:
+    <p align="center">
+      <img src="assets/fetching.png">
+    </p>
+    If the data is being `downloaded`, it looks like this:
+    <p align="center">
+      <img src="assets/downloading.png">
+    </p>
 
-**Config button**: Change configuration options.
+- **Config button**: Change configuration options.
 
-**Check-all checkbox**: Select all galleries on the page. Since there are
+- **Check-all checkbox**: Select all galleries on the page. Since there are
 checkboxes on the recommendation ("More like this"), if you check this on a
 gallery page, it's recommendations will get selected as well.
-
-![Buttons](assets/buttons.png)
-
-The Download button changes state depending on the stage of download.
-
-If the data is being `fetched`, it looks like this:
-
-![Fetching button](assets/fetching.png)
-
-If the data is being `downloaded`, it looks like this:
-
-![Downloading button](assets/downloading.png)
+    <p align="center">
+      <img src="assets/buttons.png">
+    </p>
 
 ### Configuration options
 
-![Config](assets/config.png)
+<p align="center">
+  <img src="assets/config.png">
+</p>
 
-**Domain to Use**: Domain to be used for fetching images. There are three
+- **Domain to Use**: Domain to be used for fetching images. There are three
 available options:
 
-- *NET* (from nhentai.net) `default`
-- *COM* (from nhentai.com)
+    - *NET* (from nhentai.net) `default`
+    - *COM* (from nhentai.com)
 
-nhentai.net image download is quite slow. Using nhentai.com makes quite a big
-difference in download time. The tradeoff is the extra `fetching` time. If
-you want the `fetching` time to be shorter and downloads to fail less
-often, use *NET*. If you want faster download speeds and can bear with failed
-downloads and longer fetching times, use *COM*.
+    nhentai.net image download is quite slow. Using nhentai.com makes quite a big
+    difference in download time. The tradeoff is the extra `fetching` time. If
+    you want the `fetching` time to be shorter and downloads to fail less
+    often, use *NET*. If you want faster download speeds and can bear with failed
+    downloads and longer fetching times, use *COM*.
 
-If an image/gallery does not exist on nhentai.com, nhentai.net is used as a
-fallback.
+    If an image/gallery does not exist on nhentai.com, nhentai.net is used as a
+    fallback.
 
-On mirror sites, if the *NET* option is set, their own image links will be used
-instead of nhentai.net.
+    On mirror sites, if the *NET* option is set, their own image links will be used
+    instead of nhentai.net.
 
-**Download batch size**: Number of downloads to run simultaneously.
+- **Download batch size**: Number of downloads to run simultaneously.
 
-- *Minimum*: 1
-- *Maximum*: 50
+    - *Minimum*: 1
+    - *Maximum*: 50
 
-Default is 10. If you make it too high, a lot of downloads will fail.
+    Default is 10. If you make it too high, a lot of downloads will fail.
 
-**Title format**: The galleries are downloaded in their own separate
+- **Title format**: The galleries are downloaded in their own separate
 directories. This option is for specifying the name of those directories.
 There are four available options:
 
-- *pretty* `default`
-- *english*
-- *japanese*
-- *id*
+    - *pretty* `default`
+    - *english*
+    - *japanese*
+    - *id*
 
-**Filename to prepend**: The text that gets added before every filename. If no
+- **Filename to prepend**: The text that gets added before every filename. If no
 value is specified, The default filename is `{page}.{ext}`.
 
-**Filename separator**: The character to put between given *filename* (if any)
+- **Filename separator**: The character to put between given *filename* (if any)
 and `{page}`. So, if this value is set to `Underscore` and the filename is
 set to `myFileName`, the files will be saved as `myFileName_{page}.{ext}`.
 There are three available options:
 
-- *Space* `default`
-- *Hyphen*
-- *Underscore*
+    - *Space* `default`
+    - *Hyphen*
+    - *Underscore*
 
-**Save JSON**: This is mainly for use with konnichiwa. This outputs a file in
+- **Save JSON**: This is mainly for use with konnichiwa. This outputs a file in
 the format specified
 [here](https://github.com/naiymu/konnichiwa#with-the-refresh_db-script). There
 are three available options:
 
-- *Don't save* `default`
-- *Save as JSON file*
-- *Copy to clipboard*
+    - *Don't save* `default`
+    - *Save as JSON file*
+    - *Copy to clipboard*
 
-*Save as JSON file* will save the content to a file named with the number of
-milliseconds since January 1, 1970. You can then run `refresh_db.php` from
-konnichiwa on this file to add all the downloaded galleries to your database.
+    *Save as JSON file* will save the content to a file named with the number of
+    milliseconds since January 1, 1970. You can then run `refresh_db.php` from
+    konnichiwa on this file to add all the downloaded galleries to your database.
 
-**Include groups in authors**: If the *Save JSON* option is set, the output
+- **Include groups in authors**: If the *Save JSON* option is set, the output
 has a key `authors`. This decides if the Groups in NHentai will be added to
 its value.
 
-**Button orientation**: The three buttons (download, config and check-all) are
+- **Button orientation**: The three buttons (download, config and check-all) are
 by default aligned vertically. But if you want you can change this. There are
 two available options:
 
-- Vertical `default`
-- Horizontal
+    - Vertical `default`
+    - Horizontal
 
-**Clear and stop downloads**: This probably needs a little explanation. The
+- **Clear and stop downloads**: This probably needs a little explanation. The
 downloads are stored in the extension storage. Sometimes, if you reload a tab
 in between downloads, some files are not removed from the storage and the
 script tries to download them everytime a new tab in compatible sites is
