@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         NHentai Konnichiwa
 // @author       naiymu
-// @version      1.0.1
+// @version      1.0.2
 // @license      MIT; https://raw.githubusercontent.com/naiymu/nhentai-konnichiwa/main/LICENSE
 // @namespace    https://github.com/naiymu/nhentai-konnichiwa
 // @homepage     https://github.com/naiymu/nhentai-konnichiwa
 // @downloadURL  https://github.com/naiymu/nhentai-konnichiwa/raw/main/nhentai-konnichiwa.user.js
 // @updateURL    https://github.com/naiymu/nhentai-konnichiwa/raw/main/nhentai-konnichiwa.user.js
 // @supportURL   https://github.com/naiymu/nhentai-konnichiwa/issues
-// @description  A simple usercript for downloading doujinshi from NHentai and mirrors 
+// @description  A simple usercript for downloading doujinshi from NHentai and mirrors
 // @match        https://nhentai.net/*
 // @match        https://nhentai.xxx/*
 // @match        https://nyahentai.red/*
@@ -606,8 +606,9 @@ async function addInfo(code) {
     }
     else {
         title = obj.title[titleFormat];
-        title = title.replace(/\.+$/, "");
-        title = title.replace(/^\.+/, "");
+        title = title.replace(/(\.+$)|(^\.+)/g, "");
+        title = title.replace(/(\\)|(\/)|(\|)/g, fileNameSep);
+        title = title.trim();
     }
     var pages = obj.num_pages;
     var tagList = obj.tags;
@@ -639,6 +640,8 @@ async function addInfo(code) {
     if(constTitleExists) {
         title += " - "+code;
     }
+    fileNamePrep = fileNamePrep.replace(/(\.+$)|(^\.+)/g, "");
+    fileNamePrep = fileNamePrep.replace(/(\\)|(\/)|(\|)/g, fileNameSep);
     fileNamePrep = fileNamePrep.trim();
     var namePrep = "";
     if(fileNamePrep != "") {

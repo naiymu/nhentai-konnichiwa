@@ -118,7 +118,8 @@ value is specified, The default filename is `{page}.{ext}`.
 
 - **Filename separator**: The character to put between given *filename* (if any)
 and `{page}`. So, if this value is set to `Underscore` and the filename is
-set to `myFileName`, the files will be saved as `myFileName_{page}.{ext}`.
+set to `myFileName`, the files will be saved as `myFileName_{page}.{ext}`. The
+symbols `/`, `\` and `|` will also be replaced by this separator.
 There are three available options:
 
     - *Space* `default`
