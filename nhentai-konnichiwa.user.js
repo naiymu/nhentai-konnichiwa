@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Konnichiwa
 // @author       naiymu
-// @version      1.0.2
+// @version      1.0.3
 // @license      MIT; https://raw.githubusercontent.com/naiymu/nhentai-konnichiwa/main/LICENSE
 // @namespace    https://github.com/naiymu/nhentai-konnichiwa
 // @homepage     https://github.com/naiymu/nhentai-konnichiwa
@@ -65,13 +65,6 @@ GM_addStyle (
   text-align: center;
 }
 
-.check-center {
-  display: flex!important;
-  align-items: center!important;
-  justify-content: center!important;
-  text-align: center;
-}
-
 .red-box {
   cursor: pointer;
 }
@@ -85,7 +78,10 @@ GM_addStyle (
   margin-right: 5px;
 }
 
-.red-box>.download-check {
+.download-check-all {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
   accent-color: #1f1f1f;
 }
 
@@ -119,10 +115,6 @@ GM_addStyle (
 
 @keyframes spin {
   100% {transform: rotate(359deg)};
-}
-
-.red-box>.download-check {
-  position: relative;
 }
 
 .config-wrapper {
@@ -534,7 +526,7 @@ function addConfigMenu() {
     });
 
     checkAllDiv = createNode('div', ['red-box', 'relative']);
-    checkAll = createNode('input', ['download-check']);
+    checkAll = createNode('input', ['download-check-all']);
     checkAll.type = 'checkbox';
     checkAll.addEventListener('change', () => {
         let toCheck = checkAll.checked;
@@ -717,7 +709,7 @@ async function comGetMediaUrl(item, slug) {
         await addToQueue(item, mediaId);
     }
     catch(error) {
-        console.error("apis.com request failed with error code"
+        console.error("comAPI request failed with error code"
                       +error.status
                       +". Message is "
                       +error.responseText);
