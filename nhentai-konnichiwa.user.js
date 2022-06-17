@@ -486,8 +486,8 @@ function saveConfig(reset=false) {
     }
     GM_setValue('configOptions', JSON.stringify(configOptions));
     if(configOptions.openInNewTab != oldOpenInNewTab) {
-        var galleries = document.querySelectorAll('.gallery > a');
-        for(let a of galleries) {
+        var gLinks = document.querySelectorAll('.gallery > a, .gallerythumb');
+        for(let a of gLinks) {
             if(configOptions.openInNewTab) {
                 a.setAttribute('target', '_blank');
             }
@@ -634,6 +634,12 @@ function addConfigMenu() {
         check.value = code;
         parent.classList.add("relative");
         parent.appendChild(check);
+    }
+    if(configOptions.openInNewTab) {
+        aList = document.getElementsByClassName("gallerythumb");
+        for(let a of aList) {
+            a.setAttribute('target', '_blank');
+        }
     }
     let classes = ['download-div'];
     if(configOptions.btnOrientation == btnOrientations.HR) {
