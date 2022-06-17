@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Konnichiwa
 // @author       naiymu
-// @version      1.1.0
+// @version      1.1.1
 // @license      MIT; https://raw.githubusercontent.com/naiymu/nhentai-konnichiwa/main/LICENSE
 // @namespace    https://github.com/naiymu/nhentai-konnichiwa
 // @homepage     https://github.com/naiymu/nhentai-konnichiwa
@@ -740,6 +740,14 @@ function cancelDownload() {
     enableButton();
 }
 
+function cleanString(string) {
+    string = string.replace(/(\.+$)|(^\.+)|(\|)/g, '');
+    string = string.replace(/\\\/\:\;/g, configOptions.fileNameSep);
+    string = string.replace(/\s\s+/, ' ');
+    string = string.trim();
+    return string;
+}
+
 async function addInfo(code) {
     var apiUrl = netAPI + code;
     var res = await makeGetRequest(apiUrl);
@@ -750,9 +758,7 @@ async function addInfo(code) {
     }
     else {
         title = obj.title[configOptions.titleFormat];
-        title = title.replace(/(\.+$)|(^\.+)/g, "");
-        title = title.replace(/(\\)|(\/)|(\|)/g, configOptions.fileNameSep);
-        title = title.trim();
+        title = cleanString(title);
     }
     var pages = obj.num_pages;
     var tagList = obj.tags;
@@ -785,9 +791,7 @@ async function addInfo(code) {
         title += " - "+code;
     }
     var fileNamePrep = configOptions.fileNamePrep;
-    fileNamePrep = fileNamePrep.replace(/(\.+$)|(^\.+)/g, "");
-    fileNamePrep = fileNamePrep.replace(/(\\)|(\/)|(\|)/g, configOptions.fileNameSep);
-    fileNamePrep = fileNamePrep.trim();
+    fileNamePrep = cleanString(fileNamePrep);
     var namePrep = "";
     if(fileNamePrep != "") {
         namePrep = fileNamePrep + configOptions.fileNameSep;
