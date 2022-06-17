@@ -19,8 +19,9 @@
 // @connect      cdn.nhentai.xxx
 // @connect      nhentai.com
 // @connect      t.dogehls.xyz
+// @require      https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js
+// @require      https://unpkg.com/comlink@4.3.1/dist/umd/comlink.min.js
 // @grant        GM_addStyle
-// @grant        GM_download
 // @grant        GM_setClipboard
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
@@ -51,22 +52,46 @@ GM_addStyle (
 }
 
 .red-box {
+  position: relative;
   background-color: #ed2553;
   color: white;
   border: none;
   outline: none;
   font-size: 16px;
-  width: 50px;
+  width: 80px;
   height: 35px;
   border-radius: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
+  cursor: pointer;
 }
 
-.red-box {
-  cursor: pointer;
+.percent {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+}
+
+.downloading-span,
+.compressing-span {
+  display: inline-block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50px;
+  height: 100%;
+  border-radius: 5px;
+}
+
+.downloading-span {
+  background-color: #03c03c;
+}
+
+.compressing-span {
+  background-color:  #0047ab;
 }
 
 .red-box:hover {
@@ -139,7 +164,7 @@ GM_addStyle (
   width: 100%;
   height: 100%;
   max-width: 850px;
-  max-height: 480px;
+  max-height: 550px;
   padding: 50px;
   transform: translate(-50%, -50%);
   background-color: #1f1f1f;
@@ -197,59 +222,51 @@ GM_addStyle (
 `
 );
 
-const apis = {
-    net: "https://nhentai.net/api/gallery/",
-    com: "https://nhentai.com/api/comics/",
-}
 const mediaUrls = {
     net: "https://i3.nhentai.net/galleries/",
     xxx: "https://cdn.nhentai.xxx/g/",
     hls: "https://t.dogehls.xyz/galleries/",
-    com: "https://cdn.nhentai.com/nhentai/storage/images/",
-}
+};
 const btnStates = {
     enabled: "<i class='fa fa-download'></i>",
     fetching: "<i id='btn-spinner' class='fa fa-spinner'></i>",
     downloading: "<i id='btn-spinner' class='fa fa-circle-notch'></i>",
     config: "<i class='fa fa-cog'></i>",
 };
-const methods = {
-    NET: "NET",
-    COM: "COM"
-};
 const titleFormats = {
     PR: "pretty",
     EN: "english",
     JP: "japanese",
     ID: "id",
-}
+};
 const saveJSONModes = {
     NO: "Don't save",
     FI: "Save as JSON file",
     CB: "Copy to clipboard",
-}
+};
 const fileNameSeps = {
     SP: "Space",
     HY: "Hyphen",
     US: "Underscore",
-}
+};
 const btnOrientations = {
     VR: "Vertical",
     HR: "Horizontal",
-}
+};
 const CONFIG = {
-    method: {
-        label: 'Domain to use',
-        type: 'select',
-        options: [methods.NET,methods.COM],
-        default: methods.NET,
-    },
     simulN: {
         label: 'Download batch size',
         type: 'int',
         min: 1,
         max: 50,
         default: 10,
+    },
+    compressionLevel: {
+        label: 'Compression level',
+        type: 'int',
+        min: 0,
+        max: 9,
+        default: 0,
     },
     titleFormat: {
         label: 'Title format',
@@ -286,31 +303,130 @@ const CONFIG = {
         type: 'select',
         options: [btnOrientations.VR, btnOrientations.HR],
         default: btnOrientations.VR,
+    },
+    openInNewTab: {
+        label: 'Open galleries in new tab',
+        type: 'checkbox',
+        default: true,
+    },
+    autorestart: {
+        label: 'Auto restart downloads',
+        type: 'checkbox',
+        default: true,
+    }
+};
+
+const WORKER_THREAD_NUM = ((navigator && navigator.hardwareConcurrency) || 2) - 1;
+
+class JSZipWorkerPool {
+    constructor() {
+        this.pool = [];
+        this.WORKER_URL = URL.createObjectURL(
+            new Blob(
+                [
+                    `importScripts(
+                         'https://unpkg.com/comlink/dist/umd/comlink.min.js',
+                         'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js'
+                     );
+                     class JSZipWorker {
+                         constructor() {
+                             this.zip = new JSZip;
+                         }
+                         file(title, name, {data:data}) {
+                             this.zip.folder(title).file(name, data);
+                         }
+                         generateAsync(options, onUpdate) {
+                             return this.zip.generateAsync(options, onUpdate)
+                                    .then((data) => Comlink.transfer({data:data}, [data]));
+                         }
+                     }
+                     Comlink.expose(JSZipWorker);`
+                ],
+                {type: 'text/javascript'}
+            )
+        );
+        for(let id=0; id<WORKER_THREAD_NUM; id++) {
+            this.pool.push({
+                id,
+                JSZip: null,
+                idle: true,
+            });
+        }
+    }
+    createWorker() {
+        const worker = new Worker(this.WORKER_URL);
+        return Comlink.wrap(worker);
+    }
+    async generateAsync(files, options, onUpdate) {
+        const worker = this.pool.find(({idle}) => idle);
+        if(!worker) throw new Error('No available JSZip worker');
+        worker.idle = false;
+        if(!worker.JSZip) worker.JSZip = this.createWorker();
+        const zip = await new worker.JSZip();
+        for(const {title, name, data} of files) {
+            await zip.file(title, name, Comlink.transfer({data}, [data]));
+        }
+        return zip
+               .generateAsync(
+                   options,
+                   Comlink.proxy((data) => onUpdate({workerId: worker.id, ...data}))
+               )
+               .then(({data}) => {
+                   worker.idle = true;
+                   return data;
+               });
     }
 }
 
-// Config Options saved after download button click
-var method, simulN, includeGroups, titleFormat,
-    saveJSONMode, fileNamePrep, fileNameSep, btnOrientation;
-// Buttons and Divs
-var downloadDiv, downloadBtn, configBtn, checkAllDiv, checkAll,
-    configWrapper, configDiv, saveConfigBtn, closeConfigBtn,
-    resetConfigAnchor, clearDownloadBtn;
-// Download info
-var currentDownloads = 0;
-var info = JSON.parse(GM_getValue('info') || '[]');
-var queue = JSON.parse(GM_getValue('queue') || '[]');
-// Config options
-var configOptions = JSON.parse(GM_getValue('configOptions') || '{}');
+const jsZipPool = new JSZipWorkerPool();
 
-function disableButton(btnStatus) {
+class JSZip {
+    constructor() {
+        this.files = [];
+    }
+    file(title, name, data) {
+        this.files.push({title, name, data});
+    }
+    generateAsync(options, onUpdate) {
+        return jsZipPool.generateAsync(this.files, options, onUpdate);
+    }
+}
+
+// nhentai.net API URL
+const netAPI = "https://nhentai.net/api/gallery/";
+// Saved config options
+var configOptions = JSON.parse(GM_getValue('configOptions') || '{}');
+// Buttons and Divs
+var downloadDiv,
+    downloadBtn,
+    downloadPercent,
+    downloadingSpan,
+    compressingSpan,
+    configWrapper,
+    configDiv;
+// Download info
+var downloading = false,
+    cancelled = false,
+    total = 0,
+    downloaded = 0,
+    currentDownloads = 0,
+    queue = [],
+    info = JSON.parse(sessionStorage.getItem('info') || '[]');
+// Final zip
+var zip;
+
+function disableButton(btnState) {
+    downloadingSpan.style.width = 0;
+    compressingSpan.style.width = 0;
     downloadBtn.disabled = true;
-    downloadBtn.innerHTML = btnStatus;
+    downloadPercent.innerHTML = btnState;
 }
 
 function enableButton() {
+    downloadingSpan.style.width = 0;
+    compressingSpan.style.width = 0;
     downloadBtn.disabled = false;
-    downloadBtn.innerHTML = btnStates.enabled;
+    downloadPercent.innerHTML = btnStates.enabled;
 }
 
 function createNode(element, classes=[]) {
@@ -336,18 +452,8 @@ function getExtension(type) {
     }
 }
 
-function updateConfig() {
-    method = configOptions.method;
-    simulN = configOptions.simulN;
-    titleFormat = configOptions.titleFormat;
-    includeGroups = configOptions.includeGroups;
-    saveJSONMode = configOptions.saveJSONMode;
-    fileNamePrep = configOptions.fileNamePrep;
-    fileNameSep = configOptions.fileNameSep;
-    btnOrientation = configOptions.btnOrientation;
-}
-
 function saveConfig(reset=false) {
+    const oldOpenInNewTab = configOptions.openInNewTab;
     for(const [key, value] of Object.entries(CONFIG)) {
         var element = document.getElementById(`config-${key}`);
         var configValue;
@@ -357,10 +463,10 @@ function saveConfig(reset=false) {
                 break;
             case 'int':
                 configValue = element.value;
-                if(value.max && configValue > value.max) {
+                if(configValue > value.max) {
                     configValue = value.max;
                 }
-                if(value.min && configValue < value.min) {
+                if(configValue < value.min) {
                     configValue = value.min;
                 }
                 break;
@@ -379,10 +485,21 @@ function saveConfig(reset=false) {
         downloadDiv.classList.remove('div-horizontal');
     }
     GM_setValue('configOptions', JSON.stringify(configOptions));
-    updateConfig();
+    if(configOptions.openInNewTab != oldOpenInNewTab) {
+        var galleries = document.querySelectorAll('.gallery > a');
+        for(let a of galleries) {
+            if(configOptions.openInNewTab) {
+                a.setAttribute('target', '_blank');
+            }
+            else {
+                a.removeAttribute('target');
+            }
+        }
+    }
 }
 
 function addConfigMenu() {
+    var saveConfigBtn, closeConfigBtn, cancelAnchor, resetConfigAnchor;
 
     var heading = createNode('h3', ['heading']);
     heading.innerHTML = "nhentai-konnichiwa";
@@ -425,7 +542,7 @@ function addConfigMenu() {
         }
         id = `config-${key}`;
         element.id = id;
-        var configValue = configOptions[key]
+        var configValue = (configOptions.hasOwnProperty(key))
                           ? configOptions[key]
                           : value.default;
         if(value.type == 'checkbox') {
@@ -444,7 +561,6 @@ function addConfigMenu() {
         div.appendChild(element);
 
         configDiv.appendChild(div);
-        updateConfig();
     }
 
     var btnDiv = createNode('div', ['config-btn-div']);
@@ -460,11 +576,10 @@ function addConfigMenu() {
         configWrapper.classList.remove('visible');
     });
 
-    clearDownloadBtn = createNode('a', ['config-reset']);
-    clearDownloadBtn.innerHTML = "Clear and stop downloads";
-    clearDownloadBtn.addEventListener('click', () => {
-        queue = [];
-        GM_setValue('queue', JSON.stringify(queue));
+    cancelAnchor = createNode('a', ['config-reset']);
+    cancelAnchor.innerHTML = "Cancel downloads";
+    cancelAnchor.addEventListener('click', () => {
+        cancelDownload();
     });
 
     resetConfigAnchor = createNode('a', ['config-reset']);
@@ -475,7 +590,7 @@ function addConfigMenu() {
 
     btnDiv.appendChild(saveConfigBtn);
     btnDiv.appendChild(closeConfigBtn);
-    btnDiv.appendChild(clearDownloadBtn);
+    btnDiv.appendChild(cancelAnchor);
     btnDiv.appendChild(resetConfigAnchor);
 
     configDiv.appendChild(btnDiv);
@@ -483,6 +598,15 @@ function addConfigMenu() {
 
 (async function() {
     'use strict';
+
+    window.addEventListener('beforeunload', (e) => {
+        if(downloading) {
+            e.preventDefault();
+            return '';
+        }
+    });
+
+    var aList, configBtn, checkAllDiv, checkAll;
 
     configWrapper = createNode('div', ['config-wrapper']);
     configDiv = createNode('div', ['config-div']);
@@ -495,8 +619,9 @@ function addConfigMenu() {
     configWrapper.appendChild(configDiv);
     addConfigMenu();
 
-    var aList = document.querySelectorAll(".gallery > a, #cover > a");
+    aList = document.querySelectorAll(".gallery > a, #cover > a");
     for(let a of aList) {
+        if(configOptions.openInNewTab) a.setAttribute('target', '_blank');
         var ref = a.href;
         var parent = a.parentElement;
         var code;
@@ -517,7 +642,13 @@ function addConfigMenu() {
     downloadDiv = createNode('div', classes);
 
     downloadBtn = createNode('button', ['red-box']);
+    downloadPercent = createNode('span', ['percent']);
+    downloadingSpan = createNode('span', ['downloading-span']);
+    compressingSpan = createNode('span', ['compressing-span']);
     enableButton();
+    downloadBtn.appendChild(downloadingSpan);
+    downloadBtn.appendChild(compressingSpan);
+    downloadBtn.appendChild(downloadPercent);
 
     configBtn = createNode('button', ['red-box']);
     configBtn.innerHTML = btnStates.config;
@@ -541,17 +672,6 @@ function addConfigMenu() {
     checkAllDiv.appendChild(checkAll);
 
     downloadBtn.addEventListener("click", async () => {
-        updateConfig();
-        if(info.length > 0) {
-            info = [];
-            GM_setValue('info', JSON.stringify(info));
-        }
-        switch(fileNameSep) {
-            case fileNameSeps.SP: fileNameSep = " "; break;
-            case fileNameSeps.HY: fileNameSep = "-"; break;
-            case fileNameSeps.US: fileNameSep = "_"; break;
-        }
-
         var checked = document.querySelectorAll(".download-check:checked");
         if(checked.length > 0) {
             disableButton(btnStates.fetching);
@@ -559,20 +679,18 @@ function addConfigMenu() {
         else {
             return;
         }
+        zip = await new JSZip();
+        switch(configOptions.fileNameSep) {
+            case fileNameSeps.SP: configOptions.fileNameSep = " "; break;
+            case fileNameSeps.HY: configOptions.fileNameSep = "-"; break;
+            case fileNameSeps.US: configOptions.fileNameSep = "_"; break;
+        }
         for(const c of checked) {
             var code = c.getAttribute("value");
             await addInfo(code);
-            GM_setValue('info', JSON.stringify(info));
+            sessionStorage.setItem('info', JSON.stringify(info));
         }
-        if(method == methods.COM) {
-            await comPopulateQueue();
-        }
-        else {
-            await netPopulateQueue();
-        }
-        GM_setValue('queue', JSON.stringify(queue));
-        disableButton(btnStates.downloading);
-        downloadQueue();
+        startDownload();
     });
 
     downloadDiv.appendChild(downloadBtn);
@@ -582,24 +700,52 @@ function addConfigMenu() {
     document.body.appendChild(downloadDiv);
     document.body.appendChild(configWrapper);
 
-    if(queue.length > 0) {
-        disableButton(btnStates.downloading);
-        downloadQueue();
+    if(info.length > 0) {
+        if(configOptions.autorestart) {
+            queue = [];
+            startDownload();
+        }
+        else {
+            info = [];
+            sessionStorage.removeItem('info');
+        }
     }
 })();
 
+function startDownload() {
+    downloading = true;
+    cancelled = false;
+    currentDownloads = 0;
+    downloaded = 0;
+    zip = new JSZip();
+    populateQueue();
+    total = queue.length;
+    disableButton(btnStates.downloading);
+    downloadQueue();
+}
+
+function cancelDownload() {
+    info = [];
+    queue = [];
+    sessionStorage.removeItem('info');
+    currentDownloads = 0;
+    downloading = false;
+    cancelled = true;
+    enableButton();
+}
+
 async function addInfo(code) {
-    var apiUrl = apis.net + code;
+    var apiUrl = netAPI + code;
     var res = await makeGetRequest(apiUrl);
     var obj = JSON.parse(res.responseText);
     var title;
-    if(titleFormat == 'id') {
+    if(configOptions.titleFormat == 'id') {
         title = `${obj.id}`;
     }
     else {
-        title = obj.title[titleFormat];
+        title = obj.title[configOptions.titleFormat];
         title = title.replace(/(\.+$)|(^\.+)/g, "");
-        title = title.replace(/(\\)|(\/)|(\|)/g, fileNameSep);
+        title = title.replace(/(\\)|(\/)|(\|)/g, configOptions.fileNameSep);
         title = title.trim();
     }
     var pages = obj.num_pages;
@@ -609,7 +755,7 @@ async function addInfo(code) {
     for(let i=0; i<tagList.length; i++) {
         let tagItem = tagList[i];
         if(tagItem.type == "artist"
-            || (includeGroups && tagItem.type == "group")) {
+            || (configOptions.includeGroups && tagItem.type == "group")) {
             artists.push(tagItem.name);
         }
         if(tagItem.type == "tag") {
@@ -628,19 +774,20 @@ async function addInfo(code) {
         mediaPrefix = mediaUrls.net;
     }
     mediaUrl = `${mediaPrefix}${obj.media_id}/`;
-    const constTitleExists = info.some(el => el.title === title);
+    const constTitleExists = info.some((el) => el.title === title);
     if(constTitleExists) {
         title += " - "+code;
     }
+    var fileNamePrep = configOptions.fileNamePrep;
     fileNamePrep = fileNamePrep.replace(/(\.+$)|(^\.+)/g, "");
-    fileNamePrep = fileNamePrep.replace(/(\\)|(\/)|(\|)/g, fileNameSep);
+    fileNamePrep = fileNamePrep.replace(/(\\)|(\/)|(\|)/g, configOptions.fileNameSep);
     fileNamePrep = fileNamePrep.trim();
     var namePrep = "";
     if(fileNamePrep != "") {
-        namePrep = fileNamePrep + fileNameSep;
+        namePrep = fileNamePrep + configOptions.fileNameSep;
     }
     var coverExtension = getExtension(obj.images.pages[0].t);
-    await info.push({
+    info.push({
         code: code,
         title: title,
         artists: artists,
@@ -668,7 +815,7 @@ async function addToQueue(item, mediaId=null) {
         else {
             imgUrl = `${mediaUrl}${page}${extension}`;
         }
-        await queue.push({
+        queue.push({
             page: page,
             url: imgUrl,
             title: title,
@@ -679,87 +826,40 @@ async function addToQueue(item, mediaId=null) {
     }
 }
 
-async function netPopulateQueue() {
+function populateQueue() {
     for(const item of info) {
-        await addToQueue(item);
+        addToQueue(item);
     }
 }
 
-async function makeGetRequest(url) {
+async function makeGetRequest(url, responseType = 'json') {
     return new Promise((resolve, reject) => {
         GM_xmlhttpRequest({
             method: "GET",
             url: url,
+            responsType: responseType,
             onload: (response) => {
                 resolve(response);
             },
             onerror: (error) => {
                 reject(error);
             }
-        })
+        });
     });
-}
-
-async function comGetMediaUrl(item, slug) {
-    try {
-        var apiUrl = apis.com + slug;
-        const response = await makeGetRequest(apiUrl);
-        var obj = JSON.parse(response.responseText);
-        var mediaId = obj.id;
-        await addToQueue(item, mediaId);
-    }
-    catch(error) {
-        console.error("comAPI request failed with error code"
-                      +error.status
-                      +". Message is "
-                      +error.responseText);
-    }
-}
-
-async function comInitXHR(item) {
-    try {
-        var code = item.code;
-        var url = `https://nhentai.com/g/${code}`;
-        const response = await makeGetRequest(url);
-        var slug = response.finalUrl.replace(/\/$/, "");
-        slug = slug.split("/").pop();
-        if(slug == "404") {
-            console.warn(item.title
-                         +" not found on nhentai.com. "
-                         +"Falling back to"
-                         +location.hostname);
-            await addToQueue(item);
-            return;
-        }
-        await comGetMediaUrl(item, slug);
-    }
-    catch(error) {
-        console.error("comSlug request failed with error code"
-                      +error.status
-                      +". Message is "
-                      +error.responseText);
-    }
-}
-
-async function comPopulateQueue() {
-    for(const item of info) {
-        await comInitXHR(item);
-    }
 }
 
 async function downloadQueue() {
     while(queue.length > 0) {
-        if(currentDownloads >= simulN) {
+        if(currentDownloads >= configOptions.simulN) {
             await sleep(125);
             continue;
         }
         var item = queue.shift();
-        GM_setValue('queue', JSON.stringify(queue));
         download(item);
     }
 }
 
-function saveJSON() {
+function saveJSON(fileName) {
     var data = [];
     for(var item of info) {
         data.push({
@@ -771,51 +871,91 @@ function saveJSON() {
     }
     var fileContent = {
         'directories': data
-    }
+    };
     fileContent = JSON.stringify(fileContent, null, 2);
-    if(saveJSONMode == saveJSONModes.CB) {
+    if(configOptions.saveJSONMode == saveJSONModes.CB) {
         GM_setClipboard(fileContent, 'text');
+        return;
     }
-    else {
-        var blob = new Blob([fileContent],
-                            {type: 'application/json'});
-        var jsonUrl = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        var fileName = `${Date.now()}.json`;
-        a.download = fileName;
-        a.href = jsonUrl;
+    fileContent = new TextEncoder().encode(fileContent);
+    zip.file('', fileName, fileContent.buffer);
+}
+
+function generateZip() {
+    var dateName = Date.now();
+    var compressionType = configOptions.compressionLevel == 0
+                          ? 'STORE'
+                          : 'DEFLATE';
+    var zipName = `${dateName}.zip`;
+    var jsonName = `${dateName}.json`;
+    if(configOptions.saveJSONMode != saveJSONModes.NO) {
+        saveJSON(jsonName);
+    }
+    zip.generateAsync(
+        {
+        type: 'arraybuffer',
+        compression: compressionType,
+        compressionOptions: {
+            level: configOptions.compressionLevel,
+        }},
+        ({workerId, percent, currentFile}) => {
+            var fraction = percent / 100;
+            downloadPercent.innerHTML = `${percent.toFixed(2)}%`;
+            compressingSpan.style.width = fraction * downloadBtn.offsetWidth + 'px';
+        }
+    )
+    .then((data) => {
+        var blob = new Blob([data], {type:'application/zip'});
+        var zipURL = URL.createObjectURL(blob);
+        var a = createNode('a');
+        a.download = zipName;
+        a.href = zipURL;
         a.click();
-    }
+    })
+    .then(() => {
+        info = [];
+        sessionStorage.removeItem('info');
+        downloading = false;
+        enableButton();
+    });
 }
 
 function download(item) {
-    const fileName = `${item.title}/${item.namePrep}${item.page}${item.extension}`;
-    GM_download({
-        url: item.url,
-        name: fileName,
-        saveAs: false,
-        onerror: (error, details) => {
-            // Could not download. Try again with NET
-            if(method != methods.NET) {
-                item.url = `${item.mediaUrl}${item.page}${item.extension}`;
-            }
-            queue.unshift(item);
-            GM_setValue('queue', JSON.stringify(queue));
-            currentDownloads--;
-        },
-        onload: () => {
-            currentDownloads--;
-            if(queue.length == 0 && currentDownloads == 0) {
-                enableButton();
-                if(saveJSONMode != saveJSONModes.NO) {
-                    saveJSON();
-                }
-            }
-        },
-    });
     currentDownloads++;
+    const fileName = `${item.namePrep}${item.page}${item.extension}`;
+    GM_xmlhttpRequest({
+        method: 'GET',
+        url: item.url,
+        responseType: 'arraybuffer',
+        onload: (response) => {
+            var data = response.response;
+            zip.file(item.title, fileName, data);
+
+            currentDownloads--;
+
+            downloaded++;
+            var fraction = downloaded/total;
+            downloadPercent.innerHTML = `${(fraction * 100).toFixed(2)}%`;
+            downloadingSpan.style.width = fraction * downloadBtn.offsetWidth + 'px';
+
+            if(queue.length == 0 && currentDownloads <= 0) {
+                disableButton(btnStates.downloading);
+                if(!cancelled) generateZip();
+            }
+        },
+        onerror: (error) => {
+            currentDownloads--;
+            var url = `${item.mediaUrl}${item.page}${item.extension}`;
+            if(item.url == url) {
+                console.warn(`Could not download '${item.title}' - page ${item.page}`);
+                return;
+            }
+            item.url = url;
+            queue.unshift(item);
+        }
+    });
 }
 
 function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }

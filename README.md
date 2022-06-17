@@ -18,12 +18,14 @@ konnichiwa, you could use this userscript.
 If you don't use konnichiwa, you can still use this without losing any
 functionality.
 
+This script downloads a single zip file with separate directories for all
+selected galleries inside it. The name of the zip file is the number of
+milliseconds since January 1, 1970.
+
 Supports only
 [Tampermonkey](https://www.tampermonkey.net/)
 and
 [Violentmonkey](https://violentmonkey.github.io/).
-
-**Mirror sites can still break because of CloudFlare**
 
 ## Install
 - [Install](https://raw.githubusercontent.com/naiymu/nhentai-konnichiwa/master/nhentai-konnichiwa.user.js) from *github.com*
@@ -65,12 +67,16 @@ On the recommendations section.
     <p align="center">
       <img src="assets/downloading.png">
     </p>
+    If the data is being `compressed`, it looks like this:
+    <p align="center">
+      <img src="assets/compressing.png">
+    </p>
 
 - **Config button**: Change configuration options.
 
-- **Check-all checkbox**: Select all galleries on the page. Since there are
-checkboxes on the recommendation ("More like this"), if you check this on a
-gallery page, it's recommendations will get selected as well.
+- **Check-all checkbox**: Select all galleries on the page. Note: Since there
+are checkboxes on the recommendation ("More like this") section, if you check
+this on a gallery page, it's recommendations will get selected as well.
 
 ### Configuration options
 
@@ -78,30 +84,16 @@ gallery page, it's recommendations will get selected as well.
   <img src="assets/config.png">
 </p>
 
-- **Domain to Use**: Domain to be used for fetching images. There are three
-available options:
-
-    - *NET* (from nhentai.net) `default`
-    - *COM* (from nhentai.com)
-
-    nhentai.net image download is quite slow. Using nhentai.com makes quite a big
-    difference in download time. The tradeoff is the extra `fetching` time. If
-    you want the `fetching` time to be shorter and downloads to fail less
-    often, use *NET*. If you want faster download speeds and can bear with failed
-    downloads and longer fetching times, use *COM*.
-
-    If an image/gallery does not exist on nhentai.com, nhentai.net is used as a
-    fallback.
-
-    On mirror sites, if the *NET* option is set, their own image links will be used
-    instead of nhentai.net.
-
 - **Download batch size**: Number of downloads to run simultaneously.
 
     - *Minimum*: 1
     - *Maximum*: 50
 
     Default is 10. If you make it too high, a lot of downloads will fail.
+
+- **Compression Level**: The level of compression for the final zip.
+    - *Minumum*: 0 (No compression. Fastest.)
+    - *Maximum*: 9 (Maximum compression. Slowest.)
 
 - **Title format**: The galleries are downloaded in their own separate
 directories. This option is for specifying the name of those directories.
@@ -118,7 +110,8 @@ value is specified, The default filename is `{page}.{ext}`.
 - **Filename separator**: The character to put between given *filename* (if any)
 and `{page}`. So, if this value is set to `Underscore` and the filename is
 set to `myFileName`, the files will be saved as `myFileName_{page}.{ext}`. The
-symbols `/`, `\` and `|` will also be replaced by this separator.
+symbols `/`, `\`, `|`, `:` and `;` will also be replaced by this separator,
+both in the title and the `Filename to prepend` text provided.
 There are three available options:
 
     - *Space* `default`
@@ -134,13 +127,13 @@ are three available options:
     - *Save as JSON file*
     - *Copy to clipboard*
 
-    *Save as JSON file* will save the content to a file named with the number of
-    milliseconds since January 1, 1970. You can then run `refresh_db.php` from
-    konnichiwa on this file to add all the downloaded galleries to your database.
+    *Save as JSON file* will save the content to a file with the same name as
+    the zip file. You can then run `refresh_db.php` script from konnichiwa on
+    this file to add all the downloaded galleries to your database.
 
 - **Include groups in authors**: If the *Save JSON* option is set, the output
-has a key `authors`. This decides if the Groups in NHentai will be added to
-its value.
+has a key `authors`. This decides if the 'Groups' in NHentai metadata will be
+added to its value.
 
 - **Button orientation**: The three buttons (download, config and check-all) are
 by default aligned vertically. But if you want you can change this. There are
@@ -149,16 +142,20 @@ two available options:
     - Vertical `default`
     - Horizontal
 
-- **Clear and stop downloads**: This probably needs a little explanation. The
-downloads are stored in the extension storage. Sometimes, if you reload a tab
-in between downloads, some files are not removed from the storage and the
-script tries to download them everytime a new tab in compatible sites is
-opened. You might need to click this if that happens. It's rare though.
+- **Open galleries in new tab**: Galleries are opened in new tab by default.
+You can turn this off if you want. But as a result, you will be prompted for
+confirmation if you click on a gallery link.
+
+- **Auto restart downloads**: Downlads are automatically restarted on page
+change by default. You can turn this off if you want.
+
+- **Cancel downloads**: You can choose to cancel ongoing downloads by clicking
+this.
 
 ## Suggestions
-While there are measures to continue downloads even after page
-switches/reloads, it is suggested to stay on the same page while a download
-is ongoing.
+Ongoing downloads will restart if you change the page. You can, of course, turn
+this off. It's still recommended to stay on the page while a download is
+ongoing.
 
 ## Supported sites
 - nhentai.net
