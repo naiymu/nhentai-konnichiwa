@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Konnichiwa
 // @author       naiymu
-// @version      1.1.1
+// @version      1.1.2
 // @license      MIT; https://raw.githubusercontent.com/naiymu/nhentai-konnichiwa/main/LICENSE
 // @namespace    https://github.com/naiymu/nhentai-konnichiwa
 // @homepage     https://github.com/naiymu/nhentai-konnichiwa
@@ -910,6 +910,10 @@ function generateZip() {
         }},
         ({workerId, percent, currentFile}) => {
             var fraction = percent / 100;
+            if(fraction == 1) {
+                enableButton();
+                return;
+            }
             downloadPercent.innerHTML = `${percent.toFixed(2)}%`;
             compressingSpan.style.width = fraction * downloadBtn.offsetWidth + 'px';
         }
@@ -926,7 +930,6 @@ function generateZip() {
         info = [];
         sessionStorage.removeItem('info');
         downloading = false;
-        enableButton();
     });
 }
 
