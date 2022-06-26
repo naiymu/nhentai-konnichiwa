@@ -9,6 +9,9 @@
 </p>
 
 ## Description
+>:warning: Mirrors probably won't work now. I'll see what I can do but don't
+expect it to be fixed because it's Cloudflare
+
 Userscript to download galleries from NHentai. It has features to be used with
 [konnichiwa](https://github.com/naiymu/konnichiwa). NHentai started using
 Cloudflare protection and now you can't reliably download hentai with the

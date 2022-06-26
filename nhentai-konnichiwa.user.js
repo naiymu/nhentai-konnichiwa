@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Konnichiwa
 // @author       naiymu
-// @version      1.1.2
+// @version      1.1.3
 // @license      MIT; https://raw.githubusercontent.com/naiymu/nhentai-konnichiwa/main/LICENSE
 // @namespace    https://github.com/naiymu/nhentai-konnichiwa
 // @homepage     https://github.com/naiymu/nhentai-konnichiwa
@@ -751,7 +751,7 @@ function cleanString(string) {
 async function addInfo(code) {
     var apiUrl = netAPI + code;
     var res = await makeGetRequest(apiUrl);
-    var obj = JSON.parse(res.responseText);
+    var obj = res;
     var title;
     if(configOptions.titleFormat == 'id') {
         title = `${obj.id}`;
@@ -844,17 +844,31 @@ function populateQueue() {
 
 async function makeGetRequest(url, responseType = 'json') {
     return new Promise((resolve, reject) => {
-        GM_xmlhttpRequest({
-            method: "GET",
-            url: url,
-            responsType: responseType,
-            onload: (response) => {
-                resolve(response);
-            },
-            onerror: (error) => {
-                reject(error);
-            }
-        });
+        if(location.hostname == 'nhentai.net') {
+            fetch(url, {
+                method: 'GET',
+                mode: 'same-origin',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                referrerPolicy: 'same-origin',
+            })
+            .then(response => resolve(response.json()));
+        }
+        else {
+            GM_xmlhttpRequest({
+                method: "GET",
+                url: url,
+                responsType: responseType,
+                onload: (response) => {
+                    resolve(JSON.parse(response.responseText));
+                },
+                onerror: (error) => {
+                    reject(error);
+                }
+            });
+        }
     });
 }
 
