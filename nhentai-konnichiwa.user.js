@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Konnichiwa
 // @author       naiymu
-// @version      1.1.3
+// @version      1.1.4
 // @license      MIT; https://raw.githubusercontent.com/naiymu/nhentai-konnichiwa/main/LICENSE
 // @namespace    https://github.com/naiymu/nhentai-konnichiwa
 // @homepage     https://github.com/naiymu/nhentai-konnichiwa
@@ -14,7 +14,8 @@
 // @match        https://nyahentai.red/*
 // @match        https://nhentai.to/*
 // @match        https://nhentai.website/*
-// @connect      nhentai.net
+// @connect      nhentai.xxx
+// @connect      cdn.nload.xyz
 // @connect      i3.nhentai.net
 // @connect      cdn.nhentai.xxx
 // @connect      nhentai.com
@@ -222,11 +223,7 @@ GM_addStyle (
 `
 );
 
-const mediaUrls = {
-    net: "https://i3.nhentai.net/galleries/",
-    xxx: "https://cdn.nhentai.xxx/g/",
-    hls: "https://t.dogehls.xyz/galleries/",
-};
+const netMediaUrl = "https://i3.nhentai.net/galleries/";
 const btnStates = {
     enabled: "<i class='fa fa-download'></i>",
     fetching: "<i id='btn-spinner' class='fa fa-spinner'></i>",
@@ -394,6 +391,12 @@ class JSZip {
 
 // nhentai.net API URL
 const netAPI = "https://nhentai.net/api/gallery/";
+// nhentai.xxx page URL
+const xxxPage = "https://nhentai.xxx/g/";
+// If we are on nhentai.net
+const onNET = location.hostname == 'nhentai.net';
+// DOM parser for later
+var parser = new DOMParser();
 // Saved config options
 var configOptions = JSON.parse(GM_getValue('configOptions') || '{}');
 // Buttons and Divs
@@ -748,10 +751,36 @@ function cleanString(string) {
     return string;
 }
 
-async function addInfo(code) {
-    var apiUrl = netAPI + code;
-    var res = await makeGetRequest(apiUrl);
-    var obj = res;
+async function makeGetRequest(url, code = null) {
+    return new Promise((resolve, reject) => {
+        if(onNET) {
+            fetch(url, {
+                method: 'GET',
+                mode: 'same-origin',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                referrerPolicy: 'same-origin',
+            })
+            .then(response => resolve(response.json()));
+        }
+        else {
+            GM_xmlhttpRequest({
+                method: "GET",
+                url: url,
+                onload: (response) => {
+                    resolve(parseXXXResponse(response, code));
+                },
+                onerror: (error) => {
+                    reject(error);
+                }
+            });
+        }
+    });
+}
+
+function addInfoNET(obj, code) {
     var title;
     if(configOptions.titleFormat == 'id') {
         title = `${obj.id}`;
@@ -774,18 +803,7 @@ async function addInfo(code) {
             tags.push(tagItem.name);
         }
     }
-    var mediaPrefix, mediaUrl;
-    var host = location.hostname;
-    if(host == 'nhentai.xxx' || host == 'nyahentai.red') {
-        mediaPrefix = mediaUrls.xxx;
-    }
-    else if(host == 'nhentai.to' || host == 'nhentai.website') {
-        mediaPrefix = mediaUrls.hls;
-    }
-    else {
-        mediaPrefix = mediaUrls.net;
-    }
-    mediaUrl = `${mediaPrefix}${obj.media_id}/`;
+    var mediaUrl = `${netMediaUrl}${obj.media_id}/`;
     const constTitleExists = info.some((el) => el.title === title);
     if(constTitleExists) {
         title += " - "+code;
@@ -810,26 +828,106 @@ async function addInfo(code) {
     });
 }
 
+async function addInfo(code) {
+    var apiUrl, obj;
+    if(onNET) {
+        apiUrl = netAPI + code;
+        obj = await makeGetRequest(apiUrl);
+        addInfoNET(obj, code);
+    }
+    else {
+        apiUrl = xxxPage + code;
+        obj = await makeGetRequest(apiUrl, code);
+        info.push(obj);
+    }
+}
+
+function parseXXXResponse(response, code) {
+    var htmlDoc = parser.parseFromString(response.responseText,
+                                         'text/html');
+    var title, artists = [], tags = [], pages, mediaUrl, pagesInfo = [], coverExtension;
+    var titleTemplate = string => {
+        return `${string}.title > span`;
+    }
+    const cleanRegex = /(\[[^\]]*\])|(\([^)]*\))|(\{[^}]*\})|([\.\|\~]*)/g;
+    switch(configOptions.titleFormat) {
+        case 'english':
+            title = htmlDoc.querySelector(titleTemplate('h1'));
+            title = title.textContent;
+            break;
+        case 'japanese':
+            title = htmlDoc.querySelector(titleTemplate('h2'));
+            title = title.textContent;
+            break;
+        case 'pretty':
+        default:
+            title = htmlDoc.querySelector(titleTemplate('h1'));
+            title = title.textContent;
+            title = title.replace(cleanRegex, '');
+            title = title.replace(/\s\s+/g, ' ');
+            title = title.trim();
+            title = title.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+    var tagTemplate = string => {
+        return `a[href*='${string}/'] > span.name`;
+    }
+    var artistSpans = htmlDoc.querySelectorAll(tagTemplate('artist'));
+    for(var artist of artistSpans) {
+        artists.push(artist.textContent);
+    }
+    if(configOptions.includeGroups) {
+        var groupSpans = htmlDoc.querySelectorAll(tagTemplate('group'));
+        for(var group of groupSpans) {
+            artists.push(group.textContent);
+        }
+    }
+    var tagSpans = htmlDoc.querySelectorAll(tagTemplate('tag'));
+    for(var tag of tagSpans) {
+        tags.push(tag.textContent);
+    }
+    pages = htmlDoc.querySelector(".tag[href*='#'] > span.name");
+    pages = parseInt(pages.textContent);
+    var fileNamePrep = configOptions.fileNamePrep;
+    fileNamePrep = cleanString(fileNamePrep);
+    var namePrep = "";
+    if(fileNamePrep != "") {
+        namePrep = fileNamePrep + configOptions.fileNameSep;
+    }
+    var thumbs = htmlDoc.querySelectorAll("a.gallerythumb > img");
+    mediaUrl = thumbs[0].src;
+    mediaUrl = mediaUrl.substring(0, mediaUrl.lastIndexOf("/")+1);
+    for(var thumb of thumbs) {
+        var extension = thumb.src.split('.').pop().charAt(0);
+        pagesInfo.push({t: extension});
+    }
+    coverExtension = getExtension(pagesInfo[0].t);
+    var obj = {
+        code: code,
+        title: title,
+        artists: artists,
+        tags: tags,
+        pages: pages,
+        mediaUrl: mediaUrl,
+        namePrep: namePrep,
+        coverExtension: coverExtension,
+        pagesInfo: obj.images.pages,
+    }
+    return obj;
+}
+
 async function addToQueue(item, mediaId=null) {
     var pages = item.pages;
     var title = item.title;
-    var mediaUrl = item.mediaUrl;
     var namePrep = item.namePrep;
+    var mediaUrl = item.mediaUrl;
     for(let i=0; i<pages; i++) {
         var extension = getExtension(item.pagesInfo[i].t);
         let page = i + 1;
-        var imgUrl;
-        if(mediaId != null) {
-            imgUrl = `${mediaUrls.com}${mediaId}/${page}${extension}`;
-        }
-        else {
-            imgUrl = `${mediaUrl}${page}${extension}`;
-        }
+        var imgUrl = `${mediaUrl}${page}${extension}`;
         queue.push({
             page: page,
             url: imgUrl,
             title: title,
-            mediaUrl:mediaUrl,
             namePrep: namePrep,
             extension: extension,
         });
@@ -840,36 +938,6 @@ function populateQueue() {
     for(const item of info) {
         addToQueue(item);
     }
-}
-
-async function makeGetRequest(url, responseType = 'json') {
-    return new Promise((resolve, reject) => {
-        if(location.hostname == 'nhentai.net') {
-            fetch(url, {
-                method: 'GET',
-                mode: 'same-origin',
-                credentials: 'same-origin',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                referrerPolicy: 'same-origin',
-            })
-            .then(response => resolve(response.json()));
-        }
-        else {
-            GM_xmlhttpRequest({
-                method: "GET",
-                url: url,
-                responsType: responseType,
-                onload: (response) => {
-                    resolve(JSON.parse(response.responseText));
-                },
-                onerror: (error) => {
-                    reject(error);
-                }
-            });
-        }
-    });
 }
 
 async function downloadQueue() {
@@ -972,13 +1040,7 @@ function download(item) {
         },
         onerror: (error) => {
             currentDownloads--;
-            var url = `${item.mediaUrl}${item.page}${item.extension}`;
-            if(item.url == url) {
-                console.warn(`Could not download '${item.title}' - page ${item.page}`);
-                return;
-            }
-            item.url = url;
-            queue.unshift(item);
+            console.warn(`Could not download '${item.title}' - page ${item.page}`);
         }
     });
 }
