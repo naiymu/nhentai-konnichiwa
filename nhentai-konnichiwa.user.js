@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Konnichiwa
 // @author       naiymu
-// @version      1.1.4
+// @version      1.1.5
 // @license      MIT; https://raw.githubusercontent.com/naiymu/nhentai-konnichiwa/main/LICENSE
 // @namespace    https://github.com/naiymu/nhentai-konnichiwa
 // @homepage     https://github.com/naiymu/nhentai-konnichiwa
@@ -910,7 +910,7 @@ function parseXXXResponse(response, code) {
         mediaUrl: mediaUrl,
         namePrep: namePrep,
         coverExtension: coverExtension,
-        pagesInfo: obj.images.pages,
+        pagesInfo: pagesInfo,
     }
     return obj;
 }
