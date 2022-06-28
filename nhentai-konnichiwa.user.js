@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Konnichiwa
 // @author       naiymu
-// @version      1.1.5
+// @version      1.1.6
 // @license      MIT; https://raw.githubusercontent.com/naiymu/nhentai-konnichiwa/main/LICENSE
 // @namespace    https://github.com/naiymu/nhentai-konnichiwa
 // @homepage     https://github.com/naiymu/nhentai-konnichiwa
@@ -20,7 +20,7 @@
 // @connect      cdn.nhentai.xxx
 // @connect      nhentai.com
 // @connect      t.dogehls.xyz
-// @require      https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js
+// @require      https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.0/jszip.min.js
 // @require      https://unpkg.com/comlink@4.3.1/dist/umd/comlink.min.js
 // @grant        GM_addStyle
 // @grant        GM_setClipboard
