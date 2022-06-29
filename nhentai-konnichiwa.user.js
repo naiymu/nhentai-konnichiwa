@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Konnichiwa
 // @author       naiymu
-// @version      1.1.6
+// @version      1.1.7
 // @license      MIT; https://raw.githubusercontent.com/naiymu/nhentai-konnichiwa/main/LICENSE
 // @namespace    https://github.com/naiymu/nhentai-konnichiwa
 // @homepage     https://github.com/naiymu/nhentai-konnichiwa
@@ -14,6 +14,7 @@
 // @match        https://nyahentai.red/*
 // @match        https://nhentai.to/*
 // @match        https://nhentai.website/*
+// @exclude      /https:\/\/n.*hentai.red\/g\/[0-9]*\/[0-9]+\/*.*$/
 // @connect      nhentai.xxx
 // @connect      cdn.nload.xyz
 // @connect      i3.nhentai.net
