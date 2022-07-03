@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Konnichiwa
 // @author       naiymu
-// @version      1.1.7
+// @version      1.1.8
 // @license      MIT; https://raw.githubusercontent.com/naiymu/nhentai-konnichiwa/main/LICENSE
 // @namespace    https://github.com/naiymu/nhentai-konnichiwa
 // @homepage     https://github.com/naiymu/nhentai-konnichiwa
@@ -14,7 +14,7 @@
 // @match        https://nyahentai.red/*
 // @match        https://nhentai.to/*
 // @match        https://nhentai.website/*
-// @exclude      /https:\/\/n.*hentai.red\/g\/[0-9]*\/[0-9]+\/*.*$/
+// @exclude      /https:\/\/n.*hentai.(red|net|xxx|to|website)\/g\/[0-9]*\/[0-9]+\/?$/
 // @connect      nhentai.xxx
 // @connect      cdn.nload.xyz
 // @connect      i3.nhentai.net
@@ -694,6 +694,9 @@ function addConfigMenu() {
             case fileNameSeps.SP: configOptions.fileNameSep = " "; break;
             case fileNameSeps.HY: configOptions.fileNameSep = "-"; break;
             case fileNameSeps.US: configOptions.fileNameSep = "_"; break;
+        }
+        for(let c of checked) {
+            c.checked = false;
         }
         for(const c of checked) {
             var code = c.getAttribute("value");
