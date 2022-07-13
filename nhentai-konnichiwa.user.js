@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Konnichiwa
 // @author       naiymu
-// @version      1.1.9
+// @version      1.1.10
 // @license      MIT; https://raw.githubusercontent.com/naiymu/nhentai-konnichiwa/main/LICENSE
 // @namespace    https://github.com/naiymu/nhentai-konnichiwa
 // @homepage     https://github.com/naiymu/nhentai-konnichiwa
@@ -1026,6 +1026,7 @@ function download(item) {
         url: item.url,
         responseType: 'arraybuffer',
         onload: (response) => {
+            if(cancelled) return;
             var data = response.response;
             zip.file(item.title, fileName, data);
 
@@ -1038,7 +1039,7 @@ function download(item) {
 
             if(queue.length == 0 && currentDownloads <= 0) {
                 disableButton(btnStates.downloading);
-                if(!cancelled) generateZip();
+                generateZip();
             }
         },
         onerror: (error) => {
