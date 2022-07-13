@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Konnichiwa
 // @author       naiymu
-// @version      1.1.8
+// @version      1.1.9
 // @license      MIT; https://raw.githubusercontent.com/naiymu/nhentai-konnichiwa/main/LICENSE
 // @namespace    https://github.com/naiymu/nhentai-konnichiwa
 // @homepage     https://github.com/naiymu/nhentai-konnichiwa
@@ -333,9 +333,10 @@ class JSZipWorkerPool {
                          file(title, name, {data:data}) {
                              this.zip.folder(title).file(name, data);
                          }
-                         generateAsync(options, onUpdate) {
-                             return this.zip.generateAsync(options, onUpdate)
-                                    .then((data) => Comlink.transfer({data:data}, [data]));
+                         async generateAsync(options, onUpdate) {
+                             const data = await this.zip.generateAsync(options, onUpdate);
+                             const url = URL.createObjectURL(data);
+                             return Comlink.transfer({url:url});
                          }
                      }
                      Comlink.expose(JSZipWorker);`
@@ -369,9 +370,9 @@ class JSZipWorkerPool {
                    options,
                    Comlink.proxy((data) => onUpdate({workerId: worker.id, ...data}))
                )
-               .then(({data}) => {
+               .then(({url}) => {
                    worker.idle = true;
-                   return data;
+                   return url;
                });
     }
 }
@@ -989,7 +990,7 @@ function generateZip() {
     }
     zip.generateAsync(
         {
-        type: 'arraybuffer',
+        type: 'blob',
         compression: compressionType,
         compressionOptions: {
             level: configOptions.compressionLevel,
@@ -1004,12 +1005,10 @@ function generateZip() {
             compressingSpan.style.width = fraction * downloadBtn.offsetWidth + 'px';
         }
     )
-    .then((data) => {
-        var blob = new Blob([data], {type:'application/zip'});
-        var zipURL = URL.createObjectURL(blob);
+    .then((url) => {
         var a = createNode('a');
         a.download = zipName;
-        a.href = zipURL;
+        a.href = url;
         a.click();
     })
     .then(() => {
