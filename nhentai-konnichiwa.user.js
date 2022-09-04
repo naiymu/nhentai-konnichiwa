@@ -276,7 +276,7 @@ const CONFIG = {
      fileNamePrep: {
         label: 'Filename to prepend',
         type: 'text',
-        size: 20,
+        size: 30,
         default: "",
     },
      fileNameSep: {
