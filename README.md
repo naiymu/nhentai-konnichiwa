@@ -32,6 +32,16 @@ and
 - [Install](https://greasyfork.org/scripts/446488-nhentai-konnichiwa/code/NHentai%20Konnichiwa.user.js) from *greasyfork.org*
 - [Install](https://sleazyfork.org/scripts/446488-nhentai-konnichiwa/code/NHentai%20Konnichiwa.user.js) from *sleazyfork.org*
 
+## Using with konnichiwa
+
+For using with konnichiwa, extract the zip file, move the json file to the
+`scripts/modification` directory and run the command:
+```
+php refresh_db.php [JSON-FILE-NAME]
+```
+This adds all the data to the database. Now move the downloaded directories
+to your holy directory.
+
 ## Features
 ### Checkboxes at the top left corner of every gallery on any page
 
