@@ -454,6 +454,7 @@ function getExtension(type) {
         case 'j': return '.jpg';
         case 'p': return '.png';
         case 'g': return '.gif';
+        case 'w': return '.webp';
     }
 }
 
